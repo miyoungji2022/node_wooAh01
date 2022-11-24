@@ -6,5 +6,5 @@ module.exports = {
     password:"wooahdb01_jmy",
     db:"wooahdb_1",
     port: 3306,
-    ssl: {ca: fs.readFileSync("/Users/miyoungji/WooAhYoung/BaltimoreCyberTrustRoot.crt.pem")}
+    ssl: {ca: fs.readFileSync("./BaltimoreCyberTrustRoot.crt.pem")}
 };
