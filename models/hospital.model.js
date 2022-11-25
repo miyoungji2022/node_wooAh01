@@ -231,7 +231,7 @@ Hospital.getAll = (query, result)  => {
                 select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
 
             }
-          
+            console.log("진료 요일 : ", daynum);
         } 
           // 공휴일 진료병원 조회시
           
@@ -245,7 +245,7 @@ Hospital.getAll = (query, result)  => {
             select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
           
         } 
-
+        console.log("공휴일 진료 : ", avalhoilday);
 
     }
 
