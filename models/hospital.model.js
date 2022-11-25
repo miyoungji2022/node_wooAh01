@@ -105,7 +105,6 @@ Hospital.getAll = (query, result)  => {
 전체검색 - /hospital?addr=서울시&page=1&limit=20
 현재진료 가능 - /hospital?avalhospital=1&page=0&limit=20&addr=서울시
 진료요일 - /hospital?avalday=1&page=0&limit=20&addr=서울시
-공휴일 진료병원 - /hospital?avalholiday=1&page=0&limit=20&addr=서울시
 진료과목 - /hospital?healthclinic=소아과&page=0&limit=20&addr=서울시
 응급실여부 - /hospital?emergencyrm=1&page=0&limit=20&addr=서울시
 
@@ -132,7 +131,7 @@ Hospital.getAll = (query, result)  => {
         var isExist = false;  
 
         // 검색조건이 있을경우
-        if( query.addr || query.avalhospital || query.avalday || query.healthclinic || query.emergencyrm || query.avalholiday) {
+        if( query.addr || query.avalhospital || query.avalday || query.healthclinic || query.emergencyrm) {
             select_sql += 'WHERE ';
         }
         
@@ -231,22 +230,9 @@ Hospital.getAll = (query, result)  => {
                 select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
 
             }
-            console.log("진료 요일 : ", daynum);
+            // 공휴일 진료병원 조회시
+            //select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
         } 
-          // 공휴일 진료병원 조회시
-          
-          if( query.avalholiday) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-            
-            select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
-          
-        } 
-        console.log("공휴일 진료 : ", avalholiday);
-
     }
 
     select_sql += ` LIMIT ${paramPage*paramLimit}, ${paramLimit}`;
