@@ -108,7 +108,7 @@ Hospital.getAll = (query, result)  => {
 진료과목 - /hospital?healthclinic=소아과&page=0&limit=20&addr=서울시
 응급실여부 - /hospital?emergencyrm=1&page=0&limit=20&addr=서울시
 
-/hospital?mylon=126.9019532&mylat=37.5170112&page=1&limit=20
+내위치검색 -/hospital?mylon=126.9019532&mylat=37.5170112&page=1&limit=20
 */
     var select_sql = '';
     var paramPage = (query.page)?query.page:0;
@@ -117,10 +117,13 @@ Hospital.getAll = (query, result)  => {
     console.log(query)
     select_sql = "SELECT * FROM hospital "
 
-    if( (query.lat) && (query.lon)) {
+    if( (query.mylat) && (query.mylon)) {
         // 위경도 조건이 있을경우
         select_sql = 
-        `WHERE ST_Distance_Sphere(POINT(${query.lon}, ${query.lat}), POINT(wgs84Lon, wgs84Lat))<= 2000\
+        `SELECT a.*,
+        ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat)) AS distance
+        FROM hospital a
+        WHERE ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat))<= 2000\
         ORDER BY distance`;
     } else {
         
@@ -147,67 +150,92 @@ Hospital.getAll = (query, result)  => {
         // 진료가능 병원 조회시
         if( query.avalhospital) {
             if(isExist) {
-                select_sql += ' and ';
+                select_sql += ' AND ';
             } else {
                 isExist = true;
             }
-/*
-   // 요일 정보
-        let cal = Calendar(identifier:.gregorian)
-        let now = Date()
-        let comps = cal.dateComponents([.weekday], from:now)
 
-        // 일요일 1, 월요일 2, 화요일 3, 수요일 4, 목요일 5, 금요일 6, 토요일 7
-        print("요일 : \(comps.weekday!)")
-        
-*/
-            // 1. 현재 요일 (일요일 1, 월요일 2, 화요일 3, 수요일 4, 목요일 5, 금요일 6, 토요일 7)
+            // 1. 현재 요일 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+           
             // 2. 현재 시간 : 0900
             // 예) 월요일 09시일 경우 0900 이 dutyTime1s, dutyTime1c 데이터 사이에 있는 병원 조회
-            var daynum = 1;
-            var currTime = '0900';
+
+            // 시간 정보
+            require('date-utils');
+            var now = new Date();	// 현재 날짜 및 시간
+            var daynum = now.getDay();	// 요일
+            console.log("현재시간 & 요일 : ", now, daynum);
+            
+            var newDate = new Date();
+            var currTime = newDate.toFormat('HH24MI');
 
             // 스위치 이용
             switch (daynum) {
+                case 0 : 
+                select_sql += ` dutyTime7s <= ${currTime} AND dutyTime7c >= ${currTime}`;
+                break;
                 case 1 : 
-                select_sql += ` dutyTime1s <= ${currTime} and dutyTime1c >= ${currTime}`;
+                select_sql += ` dutyTime1s <= ${currTime} AND dutyTime1c >= ${currTime}`;
+                break;
                 case 2 : 
-                select_sql += ` dutyTime2s <= ${currTime} and dutyTime2c >= ${currTime}`;
+                select_sql += ` dutyTime2s <= ${currTime} AND dutyTime2c >= ${currTime}`;
+                break;
                 case 3 : 
-                select_sql += ` dutyTime3s <= ${currTime} and dutyTime3c >= ${currTime}`;
+                select_sql += ` dutyTime3s <= ${currTime} AND dutyTime3c >= ${currTime}`;
+                break;
                 case 4 : 
-                select_sql += ` dutyTime4s <= ${currTime} and dutyTime4c >= ${currTime}`;
+                select_sql += ` dutyTime4s <= ${currTime} AND dutyTime4c >= ${currTime}`;
+                break;
                 case 5 : 
-                select_sql += ` dutyTime5s <= ${currTime} and dutyTime5c >= ${currTime}`;
+                select_sql += ` dutyTime5s <= ${currTime} AND dutyTime5c >= ${currTime}`;
+                break;
                 case 6 : 
-                select_sql += ` dutyTime6s <= ${currTime} and dutyTime6c >= ${currTime}`;
-                case 7 : 
-                select_sql += ` dutyTime7s <= ${currTime} and dutyTime7c >= ${currTime}`;
-
+                select_sql += ` dutyTime6s <= ${currTime} AND dutyTime6c >= ${currTime}`;
+                
             }
         } 
-
+        // 진료가능 요일 조회시
         if( query.avalday) {
             if(isExist) {
-                select_sql += ' and ';
+                select_sql += ' AND ';
             } else {
                 isExist = true;
             }
 
-            // 1. 현재 요일 (월 : 1, 화 :...) 
+            // 1. 요일정보 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+            
             var daynum = parseInt(query.avalday);
 
             // 스위치 이용
             switch (daynum) {
                 case 1 : 
-                select_sql += ` dutyTime1s != '' and dutyTime1c != ''`;
+                select_sql += ` dutyTime7s != '' AND dutyTime7c != ''`;
+                break;
+                case 2 : 
+                select_sql += ` dutyTime1s != '' AND dutyTime1c != ''`;
+                break;
+                case 3 : 
+                select_sql += ` dutyTime2s != '' AND dutyTime2c != ''`;
+                break;
+                case 4 : 
+                select_sql += ` dutyTime3s != '' AND dutyTime3c != ''`;
+                break;
+                case 5 : 
+                select_sql += ` dutyTime4s != '' AND dutyTime4c != ''`;
+                break;
+                case 6 : 
+                select_sql += ` dutyTime5s != '' AND dutyTime5c != ''`;
+                break;
+                case 7 : 
+                select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
+
             }
+            // 공휴일 진료병원 조회시
+            //select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
         } 
-
-
     }
 
-    select_sql += ` limit ${paramPage*paramLimit}, ${paramLimit}`;
+    select_sql += ` LIMIT ${paramPage*paramLimit}, ${paramLimit}`;
 
     console.log(select_sql)
 
