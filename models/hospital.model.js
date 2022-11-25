@@ -242,8 +242,6 @@ Hospital.getAll = (query, result)  => {
                 isExist = true;
             }
             
-            var daynum = parseInt(query.avalday);
-
             select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
           
         } 
