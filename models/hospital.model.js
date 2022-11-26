@@ -209,30 +209,41 @@ Hospital.getAll = (query, result)  => {
 
             // 스위치 이용
             switch (daynum) {
-                case 1 : 
+                case 0 : 
                 select_sql += ` dutyTime7s != '' AND dutyTime7c != ''`;
                 break;
-                case 2 : 
+                case 1 : 
                 select_sql += ` dutyTime1s != '' AND dutyTime1c != ''`;
                 break;
-                case 3 : 
+                case 2 : 
                 select_sql += ` dutyTime2s != '' AND dutyTime2c != ''`;
                 break;
-                case 4 : 
+                case 3 : 
                 select_sql += ` dutyTime3s != '' AND dutyTime3c != ''`;
                 break;
-                case 5 : 
+                case 4 : 
                 select_sql += ` dutyTime4s != '' AND dutyTime4c != ''`;
                 break;
-                case 6 : 
+                case 5 : 
                 select_sql += ` dutyTime5s != '' AND dutyTime5c != ''`;
                 break;
-                case 7 : 
+                case 6 : 
                 select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
 
             }
             console.log("진료 요일 : ", daynum);
         } 
+
+        // 응급실 운영 조회시
+        if( query.emergencyrm) {
+            if(isExist) {
+                select_sql += ' AND ';
+            } else {
+                isExist = true;
+            }
+
+            select_sql += ` dutyEryn = 1`;
+        }
         
         // 공휴일 진료병원 조회시  
         if( query.avalholiday) {
@@ -243,8 +254,18 @@ Hospital.getAll = (query, result)  => {
             }
             
             select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
-          
         } 
+
+        // 진료과목 조회시
+        if(query.healthclinic) {
+            if(isExist) {
+                select_sql += ' AND ';
+            } else {
+                isExist = true;
+            }
+            
+            select_sql += ` dgidIdName like '%${query.healthclinic}%'`;
+        }
 
     }
 

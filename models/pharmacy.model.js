@@ -90,9 +90,9 @@ Pharmacy.getAll = (query, result) => {
 // }
     /* 
     전체검색 - /pharmacy?addr=서울시&page=1&limit=20
-    현재방문 가능 - /pharmacy?avalpharmacy=1&page=0&limit=20&addr=서울시
-    진료요일 - /pharmacy?avalday=1&page=0&limit=20&addr=서울시
-
+    현재방문 가능 약국 - /pharmacy?avalpharmacy=1&page=0&limit=20&addr=서울시
+    방문가능 요일 - /pharmacy?avalday=1&page=0&limit=20&addr=서울시
+    공휴일 방문가능 약국 - /pharmacy?avalholiday=1&page=0&limit=20&addr=서울시
     내위치 검색 - /pharmacy?mylon=126.9019532&mylat=37.5170112&page=1&limit=20
     */
    
@@ -103,13 +103,13 @@ Pharmacy.getAll = (query, result) => {
     console.log(query)
     select_sql = "SELECT * FROM pharmacy "
 
-    if( (query.lat) && (query.lon)) {
+    if( (query.mylat) && (query.mylon)) {
         // 위경도 조건이 있을경우
         select_sql = 
         `SELECT a.*,
-        ST_Distance_Sphere(POINT(${query.lon}, ${query.lat}), POINT(a.wgs84Lon, a.wgs84Lat)) AS distance
+        ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat)) AS distance
         FROM pharmacy a
-        WHERE ST_Distance_Sphere(POINT(${query.lon}, ${query.lat}), POINT(a.wgs84Lon, a.wgs84Lat))<= 2000\
+        WHERE ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat))<= 2000\
         ORDER BY distance`;
     } else {
         
@@ -117,7 +117,7 @@ Pharmacy.getAll = (query, result) => {
         var isExist = false;  
 
         // 검색조건이 있을경우
-        if( query.addr || query.avalpharmacy || query.avalday) {
+        if( query.addr || query.avalpharmacy || query.avalday || query.avalholiday) {
             select_sql += 'WHERE ';
         }
         
@@ -141,33 +141,40 @@ Pharmacy.getAll = (query, result) => {
                 isExist = true;
             }
 
-            // 1. 현재 요일 (일요일 1, 월요일 2, 화요일 3, 수요일 4, 목요일 5, 금요일 6, 토요일 7)
+            // 1. 현재 요일 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
             // 2. 현재 시간 : 0900
             // 예) 월요일 09시일 경우 0900 이 dutyTime1s, dutyTime1c 데이터 사이에 있는 약국 조회
-            var daynum = 1;
-            var currTime = '0900';
+
+            // 시간 정보
+            require('date-utils');
+            var now = new Date();	// 현재 날짜 및 시간
+            var daynum = now.getDay();	// 요일
+            console.log("현재시간 & 요일 : ", now, daynum);
+            
+            var newDate = new Date();
+            var currTime = newDate.toFormat('HH24MI');
 
             // 스위치문 이용
             switch (daynum) {
-                case 1 : 
+                case 0 : 
                 select_sql += ` dutyTime7s <= ${currTime} AND dutyTime7c >= ${currTime}`;
                 break;
-                case 2 : 
+                case 1 : 
                 select_sql += ` dutyTime1s <= ${currTime} AND dutyTime1c >= ${currTime}`;
                 break;
-                case 3 : 
+                case 2 : 
                 select_sql += ` dutyTime2s <= ${currTime} AND dutyTime2c >= ${currTime}`;
                 break;
-                case 4 : 
+                case 3 : 
                 select_sql += ` dutyTime3s <= ${currTime} AND dutyTime3c >= ${currTime}`;
                 break;
-                case 5 : 
+                case 4 : 
                 select_sql += ` dutyTime4s <= ${currTime} AND dutyTime4c >= ${currTime}`;
                 break;
-                case 6 : 
+                case 5 : 
                 select_sql += ` dutyTime5s <= ${currTime} AND dutyTime5c >= ${currTime}`;
                 break;
-                case 7 : 
+                case 6 : 
                 select_sql += ` dutyTime6s <= ${currTime} AND dutyTime6c >= ${currTime}`;
                 
             }
@@ -180,36 +187,47 @@ Pharmacy.getAll = (query, result) => {
                 isExist = true;
             }
 
-            // 1.현재 요일 (일요일 1, 월요일 2, 화요일 3, 수요일 4, 목요일 5, 금요일 6, 토요일 7)
+            // 1. 요일정보 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+            
             var daynum = parseInt(query.avalday);
 
             // 스위치문 이용
             switch (daynum) {
-                case 1 : 
+                case 0 : 
                 select_sql += ` dutyTime7s != '' AND dutyTime7c != ''`;
                 break;
-                case 2 : 
+                case 1 : 
                 select_sql += ` dutyTime1s != '' AND dutyTime1c != ''`;
                 break;
-                case 3 : 
+                case 2 : 
                 select_sql += ` dutyTime2s != '' AND dutyTime2c != ''`;
                 break;
-                case 4 : 
+                case 3 : 
                 select_sql += ` dutyTime3s != '' AND dutyTime3c != ''`;
                 break;
-                case 5 : 
+                case 4 : 
                 select_sql += ` dutyTime4s != '' AND dutyTime4c != ''`;
                 break;
-                case 6 : 
+                case 5 : 
                 select_sql += ` dutyTime5s != '' AND dutyTime5c != ''`;
                 break;
-                case 7 : 
+                case 6 : 
                 select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
-
             }
-            // 공휴일 방문가능 약국 조회시
+            console.log("방문 요일 : ", daynum);
+        } 
+
+        // 공휴일 방문가능 조회시  
+        if( query.avalholiday) {
+            if(isExist) {
+                select_sql += ' AND ';
+            } else {
+                isExist = true;
+            }
+            
             select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
         } 
+
     }
 
     select_sql += ` LIMIT ${paramPage*paramLimit}, ${paramLimit}`;
