@@ -200,7 +200,7 @@ Pharmacy.getAll = (query, result) => {
             
             var newDate = new Date();
             //var currTime = newDate.toFormat('HH24MI');
-            var currTime = '2000';
+            var currTime = '2100';
             
             // 스위치문 이용
             switch (daynum) {
