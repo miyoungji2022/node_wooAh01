@@ -117,7 +117,7 @@ Pharmacy.getAll = (query, result) => {
         var isExist = false;  
 
         // 검색조건이 있을경우
-        if( query.addr || query.avalpharmacy || query.avalday || query.avalholiday) {
+        if( query.addr || query.avalpharmacy || query.avalday || query.avalholiday  || query.avalnight) {
             select_sql += 'WHERE ';
         }
         
@@ -179,6 +179,55 @@ Pharmacy.getAll = (query, result) => {
                 
             }
         } 
+ 
+        // 야간 약국 조회시
+        if( query.avalnight) {
+            if(isExist) {
+                select_sql += ' AND ';
+            } else {
+                isExist = true;
+            }
+
+            // 1. 현재 요일 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+            // 2. 현재 시간 : 0900
+            // 예) 월요일 09시일 경우 0900 이 dutyTime1s, dutyTime1c 데이터 사이에 있는 약국 조회
+
+            // 시간 정보
+            require('date-utils');
+            var now = new Date();	// 현재 날짜 및 시간
+            var daynum = now.getDay();	// 요일
+            console.log("현재시간 & 요일 : ", now, daynum);
+            
+            var newDate = new Date();
+            //var currTime = newDate.toFormat('HH24MI');
+            var currTime = '2000';
+            
+            // 스위치문 이용
+            switch (daynum) {
+                case 0 : 
+                select_sql += ` dutyTime7s <= ${currTime} AND dutyTime7c >= ${currTime}`;
+                break;
+                case 1 : 
+                select_sql += ` dutyTime1s <= ${currTime} AND dutyTime1c >= ${currTime}`;
+                break;
+                case 2 : 
+                select_sql += ` dutyTime2s <= ${currTime} AND dutyTime2c >= ${currTime}`;
+                break;
+                case 3 : 
+                select_sql += ` dutyTime3s <= ${currTime} AND dutyTime3c >= ${currTime}`;
+                break;
+                case 4 : 
+                select_sql += ` dutyTime4s <= ${currTime} AND dutyTime4c >= ${currTime}`;
+                break;
+                case 5 : 
+                select_sql += ` dutyTime5s <= ${currTime} AND dutyTime5c >= ${currTime}`;
+                break;
+                case 6 : 
+                select_sql += ` dutyTime6s <= ${currTime} AND dutyTime6c >= ${currTime}`;
+                
+            }
+        } 
+
         // 방문가능 요일 조회시
         if( query.avalday) {
             if(isExist) {
