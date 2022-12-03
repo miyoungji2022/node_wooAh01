@@ -116,160 +116,167 @@ Hospital.getAll = (query, result)  => {
     var paramLimit = (query.limit)?query.limit:5;
 
     console.log(query)
-    select_sql = "SELECT a.*, 0  AS distance FROM hospital a "
-
+   
     if( (query.mylat) && (query.mylon)) {
-        // 위경도 조건이 있을경우
-        select_sql = 
-        `SELECT a.*,
-        ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat)) AS distance
-        FROM hospital a
-        WHERE ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat))<= 2000\
-        ORDER BY distance`;
+        // 위경도가 있을경우 거리 처리
+        select_sql =  `SELECT a.*, ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat)) AS distance \
+                        FROM hospital a `;
     } else {
-        
-        // 첫번째 조건 존재 여부
-        var isExist = false;  
-
-        // 검색조건이 있을경우
-        if( query.addr || query.avalhospital || query.avalday || query.healthclinic || query.emergencyrm || query.avalholiday) {
-            select_sql += 'WHERE ';
-        }
-        
-        // 검색 주소가 있을 경우
-        if( query.addr) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-
-            select_sql += 
-            `a.dutyAddr LIKE '%${query.addr}%'`;
-        } 
-
-        // 진료가능 병원 조회시
-        if( query.avalhospital) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-
-            // 1. 현재 요일 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
-           
-            // 2. 현재 시간 : 0900
-            // 예) 월요일 09시일 경우 0900 이 dutyTime1s, dutyTime1c 데이터 사이에 있는 병원 조회
-
-            // 시간 정보
-            require('date-utils');
-            var now = new Date();	// 현재 날짜 및 시간
-            var daynum = now.getDay();	// 요일
-            console.log("현재시간 & 요일 : ", now, daynum);
-            
-            var newDate = new Date();
-            var currTime = newDate.toFormat('HH24MI');
-
-            // 스위치 이용
-            switch (daynum) {
-                case 0 : 
-                select_sql += ` a.dutyTime7s <= ${currTime} AND a.dutyTime7c >= ${currTime}`;
-                break;
-                case 1 : 
-                select_sql += ` a.dutyTime1s <= ${currTime} AND a.dutyTime1c >= ${currTime}`;
-                break;
-                case 2 : 
-                select_sql += ` a.dutyTime2s <= ${currTime} AND a.dutyTime2c >= ${currTime}`;
-                break;
-                case 3 : 
-                select_sql += ` a.dutyTime3s <= ${currTime} AND a.dutyTime3c >= ${currTime}`;
-                break;
-                case 4 : 
-                select_sql += ` a.dutyTime4s <= ${currTime} AND a.dutyTime4c >= ${currTime}`;
-                break;
-                case 5 : 
-                select_sql += ` a.dutyTime5s <= ${currTime} AND a.dutyTime5c >= ${currTime}`;
-                break;
-                case 6 : 
-                select_sql += ` a.dutyTime6s <= ${currTime} AND a.dutyTime6c >= ${currTime}`;
-                
-            }
-        } 
-        // 진료가능 요일 조회시
-        if( query.avalday) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-
-            // 1. 요일정보 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
-            
-            var daynum = parseInt(query.avalday);
-
-            // 스위치 이용
-            switch (daynum) {
-                case 0 : 
-                select_sql += ` a.dutyTime7s != '' AND a.dutyTime7c != ''`;
-                break;
-                case 1 : 
-                select_sql += ` a.dutyTime1s != '' AND a.dutyTime1c != ''`;
-                break;
-                case 2 : 
-                select_sql += ` a.dutyTime2s != '' AND a.dutyTime2c != ''`;
-                break;
-                case 3 : 
-                select_sql += ` a.dutyTime3s != '' AND a.dutyTime3c != ''`;
-                break;
-                case 4 : 
-                select_sql += ` a.dutyTime4s != '' AND a.dutyTime4c != ''`;
-                break;
-                case 5 : 
-                select_sql += ` a.dutyTime5s != '' AND a.dutyTime5c != ''`;
-                break;
-                case 6 : 
-                select_sql += ` a.dutyTime6s != '' AND a.dutyTime6c != ''`;
-
-            }
-            console.log("진료 요일 : ", daynum);
-        } 
-
-        // 응급실 운영 조회시
-        if( query.emergencyrm) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-
-            select_sql += ` a.dutyEryn = 1`;
-        }
-        
-        // 공휴일 진료병원 조회시  
-        if( query.avalholiday) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-            
-            select_sql += ` a.dutyTime8s != '' AND a.dutyTime8c != ''`;
-        } 
-
-        // 진료과목 조회시
-        if(query.healthclinic) {
-            if(isExist) {
-                select_sql += ' AND ';
-            } else {
-                isExist = true;
-            }
-            
-            select_sql += ` a.dgidIdName like '%${query.healthclinic}%'`;
-        }
-
+        select_sql = "SELECT a.*, 0 AS distance FROM hospital a "
     }
 
-    select_sql += ` LIMIT ${paramPage*paramLimit}, ${paramLimit}`;
+    // 첫번째 조건 존재 여부
+    var isExist = false;  
+
+    // 검색조건이 있을경우
+    if( query.addr || query.avalhospital || query.avalday || query.healthclinic || query.emergencyrm || query.avalholiday || ((query.mylat) && (query.mylon))) {
+        select_sql += 'WHERE ';
+    }
+    
+    // 검색 주소가 있을 경우
+    if( query.addr) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+
+        select_sql += 
+        `a.dutyAddr LIKE '%${query.addr}%'`;
+    } 
+
+    if( (query.mylat) && (query.mylon)) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+
+        // 위경도 조건이 있을경우
+        select_sql +=  `ST_Distance_Sphere(POINT(${query.mylon}, ${query.mylat}), POINT(a.wgs84Lon, a.wgs84Lat))<= 2000`;
+    } 
+
+    // 진료가능 병원 조회시
+    if( query.avalhospital) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+
+        // 1. 현재 요일 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+        
+        // 2. 현재 시간 : 0900
+        // 예) 월요일 09시일 경우 0900 이 dutyTime1s, dutyTime1c 데이터 사이에 있는 병원 조회
+
+        // 시간 정보
+        require('date-utils');
+        var now = new Date();	// 현재 날짜 및 시간
+        var daynum = now.getDay();	// 요일
+        console.log("현재시간 & 요일 : ", now, daynum);
+        
+        var newDate = new Date();
+        var currTime = newDate.toFormat('HH24MI');
+
+        // 스위치 이용
+        switch (daynum) {
+            case 0 : 
+            select_sql += ` a.dutyTime7s <= ${currTime} AND a.dutyTime7c >= ${currTime}`;
+            break;
+            case 1 : 
+            select_sql += ` a.dutyTime1s <= ${currTime} AND a.dutyTime1c >= ${currTime}`;
+            break;
+            case 2 : 
+            select_sql += ` a.dutyTime2s <= ${currTime} AND a.dutyTime2c >= ${currTime}`;
+            break;
+            case 3 : 
+            select_sql += ` a.dutyTime3s <= ${currTime} AND a.dutyTime3c >= ${currTime}`;
+            break;
+            case 4 : 
+            select_sql += ` a.dutyTime4s <= ${currTime} AND a.dutyTime4c >= ${currTime}`;
+            break;
+            case 5 : 
+            select_sql += ` a.dutyTime5s <= ${currTime} AND a.dutyTime5c >= ${currTime}`;
+            break;
+            case 6 : 
+            select_sql += ` a.dutyTime6s <= ${currTime} AND a.dutyTime6c >= ${currTime}`;
+            
+        }
+    } 
+    // 진료가능 요일 조회시
+    if( query.avalday) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+
+        // 1. 요일정보 (일요일은 0, 월요일은 1, 화요일은 2, 수요일은 3, 목요일은 4, 금요일은 5, 토요일은 6)
+        
+        var daynum = parseInt(query.avalday);
+
+        // 스위치 이용
+        switch (daynum) {
+            case 0 : 
+            select_sql += ` a.dutyTime7s != '' AND a.dutyTime7c != ''`;
+            break;
+            case 1 : 
+            select_sql += ` a.dutyTime1s != '' AND a.dutyTime1c != ''`;
+            break;
+            case 2 : 
+            select_sql += ` a.dutyTime2s != '' AND a.dutyTime2c != ''`;
+            break;
+            case 3 : 
+            select_sql += ` a.dutyTime3s != '' AND a.dutyTime3c != ''`;
+            break;
+            case 4 : 
+            select_sql += ` a.dutyTime4s != '' AND a.dutyTime4c != ''`;
+            break;
+            case 5 : 
+            select_sql += ` a.dutyTime5s != '' AND a.dutyTime5c != ''`;
+            break;
+            case 6 : 
+            select_sql += ` a.dutyTime6s != '' AND a.dutyTime6c != ''`;
+
+        }
+        console.log("진료 요일 : ", daynum);
+    } 
+
+    // 응급실 운영 조회시
+    if( query.emergencyrm) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+
+        select_sql += ` a.dutyEryn = 1`;
+    }
+    
+    // 공휴일 진료병원 조회시  
+    if( query.avalholiday) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+        
+        select_sql += ` a.dutyTime8s != '' AND a.dutyTime8c != ''`;
+    } 
+
+    // 진료과목 조회시
+    if(query.healthclinic) {
+        if(isExist) {
+            select_sql += ' AND ';
+        } else {
+            isExist = true;
+        }
+        
+        select_sql += ` a.dgidIdName like '%${query.healthclinic}%'`;
+    }
+
+    select_sql += ` order by distance \
+                    LIMIT ${paramPage*paramLimit}, ${paramLimit}`;
 
     console.log(select_sql)
 
