@@ -116,7 +116,7 @@ Hospital.getAll = (query, result)  => {
     var paramLimit = (query.limit)?query.limit:5;
 
     console.log(query)
-    select_sql = "SELECT * FROM hospital "
+    select_sql = "SELECT a.*, 0  AS distance FROM hospital a "
 
     if( (query.mylat) && (query.mylon)) {
         // 위경도 조건이 있을경우
@@ -145,7 +145,7 @@ Hospital.getAll = (query, result)  => {
             }
 
             select_sql += 
-            `dutyAddr LIKE '%${query.addr}%'`;
+            `a.dutyAddr LIKE '%${query.addr}%'`;
         } 
 
         // 진료가능 병원 조회시
@@ -173,25 +173,25 @@ Hospital.getAll = (query, result)  => {
             // 스위치 이용
             switch (daynum) {
                 case 0 : 
-                select_sql += ` dutyTime7s <= ${currTime} AND dutyTime7c >= ${currTime}`;
+                select_sql += ` a.dutyTime7s <= ${currTime} AND a.dutyTime7c >= ${currTime}`;
                 break;
                 case 1 : 
-                select_sql += ` dutyTime1s <= ${currTime} AND dutyTime1c >= ${currTime}`;
+                select_sql += ` a.dutyTime1s <= ${currTime} AND a.dutyTime1c >= ${currTime}`;
                 break;
                 case 2 : 
-                select_sql += ` dutyTime2s <= ${currTime} AND dutyTime2c >= ${currTime}`;
+                select_sql += ` a.dutyTime2s <= ${currTime} AND a.dutyTime2c >= ${currTime}`;
                 break;
                 case 3 : 
-                select_sql += ` dutyTime3s <= ${currTime} AND dutyTime3c >= ${currTime}`;
+                select_sql += ` a.dutyTime3s <= ${currTime} AND a.dutyTime3c >= ${currTime}`;
                 break;
                 case 4 : 
-                select_sql += ` dutyTime4s <= ${currTime} AND dutyTime4c >= ${currTime}`;
+                select_sql += ` a.dutyTime4s <= ${currTime} AND a.dutyTime4c >= ${currTime}`;
                 break;
                 case 5 : 
-                select_sql += ` dutyTime5s <= ${currTime} AND dutyTime5c >= ${currTime}`;
+                select_sql += ` a.dutyTime5s <= ${currTime} AND a.dutyTime5c >= ${currTime}`;
                 break;
                 case 6 : 
-                select_sql += ` dutyTime6s <= ${currTime} AND dutyTime6c >= ${currTime}`;
+                select_sql += ` a.dutyTime6s <= ${currTime} AND a.dutyTime6c >= ${currTime}`;
                 
             }
         } 
@@ -210,25 +210,25 @@ Hospital.getAll = (query, result)  => {
             // 스위치 이용
             switch (daynum) {
                 case 0 : 
-                select_sql += ` dutyTime7s != '' AND dutyTime7c != ''`;
+                select_sql += ` a.dutyTime7s != '' AND a.dutyTime7c != ''`;
                 break;
                 case 1 : 
-                select_sql += ` dutyTime1s != '' AND dutyTime1c != ''`;
+                select_sql += ` a.dutyTime1s != '' AND a.dutyTime1c != ''`;
                 break;
                 case 2 : 
-                select_sql += ` dutyTime2s != '' AND dutyTime2c != ''`;
+                select_sql += ` a.dutyTime2s != '' AND a.dutyTime2c != ''`;
                 break;
                 case 3 : 
-                select_sql += ` dutyTime3s != '' AND dutyTime3c != ''`;
+                select_sql += ` a.dutyTime3s != '' AND a.dutyTime3c != ''`;
                 break;
                 case 4 : 
-                select_sql += ` dutyTime4s != '' AND dutyTime4c != ''`;
+                select_sql += ` a.dutyTime4s != '' AND a.dutyTime4c != ''`;
                 break;
                 case 5 : 
-                select_sql += ` dutyTime5s != '' AND dutyTime5c != ''`;
+                select_sql += ` a.dutyTime5s != '' AND a.dutyTime5c != ''`;
                 break;
                 case 6 : 
-                select_sql += ` dutyTime6s != '' AND dutyTime6c != ''`;
+                select_sql += ` a.dutyTime6s != '' AND a.dutyTime6c != ''`;
 
             }
             console.log("진료 요일 : ", daynum);
@@ -242,7 +242,7 @@ Hospital.getAll = (query, result)  => {
                 isExist = true;
             }
 
-            select_sql += ` dutyEryn = 1`;
+            select_sql += ` a.dutyEryn = 1`;
         }
         
         // 공휴일 진료병원 조회시  
@@ -253,7 +253,7 @@ Hospital.getAll = (query, result)  => {
                 isExist = true;
             }
             
-            select_sql += ` dutyTime8s != '' AND dutyTime8c != ''`;
+            select_sql += ` a.dutyTime8s != '' AND a.dutyTime8c != ''`;
         } 
 
         // 진료과목 조회시
@@ -264,7 +264,7 @@ Hospital.getAll = (query, result)  => {
                 isExist = true;
             }
             
-            select_sql += ` dgidIdName like '%${query.healthclinic}%'`;
+            select_sql += ` a.dgidIdName like '%${query.healthclinic}%'`;
         }
 
     }
